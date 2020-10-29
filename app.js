@@ -23,6 +23,10 @@ app.get("/work", (req, res) => {
   res.render("list", { listTitle: "Work list", newItems: workItems });
 });
 
+app.get("/about", (req, res) => {
+  res.render("about");
+});
+
 app.post("/", (req, res) => {
   console.log(req.body);
   item = req.body.newItem;
