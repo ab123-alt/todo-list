@@ -10,40 +10,50 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
+mongoose.connect("mongodb://localhost:27017/todolistDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 // schema
 const itemSchema = new mongoose.Schema({
-  name: String
-})
+  name: String,
+});
 
-// model -> in the databse todolistDB, a collection with the name items will be created 
-const Item = mongoose.model('Item', itemSchema);
+// model -> in the databse todolistDB, a collection with the name items will be created
+const Item = mongoose.model("Item", itemSchema);
 
 // document1
-const item1 = new Item({name: 'Welcome to your ToDo List'});
+const item1 = new Item({ name: "Welcome to your ToDo List: item1" });
 
 // document2
-const item2 = new Item({name: 'Welcome to your ToDo List2'});
+const item2 = new Item({ name: "Welcome to your ToDo List2: item2" });
 
 // document3
-const item3 = new Item({name: 'Welcome to your ToDo List3'});
+const item3 = new Item({ name: "Welcome to your ToDo List3: item3" });
 
 const defaultItems = [item1, item2, item3];
-
-Item.insertMany(defaultItems, (err) => {
-  if(err) {
-    console.log('Something went wrong', err);
-  } else {
-    console.log('Successfully created default items');
-  }
-})
 
 app.get("/", (req, res) => {
   const currentDay = new Date();
   options = { weekday: "long", day: "numeric", month: "long" };
   var day = currentDay.toLocaleDateString("de-DE", options);
-  res.render("list", { listTitle: day, newItems: items });
+
+  Item.find({}, (err, foundItmes) => {
+    if (foundItmes.length === 0) {
+      Item.insertMany(defaultItems, (err) => {
+        if (err) {
+          console.log("Something went wrong", err);
+        } else {
+          console.log("Successfully created default items");
+        }
+      });
+      res.redirect('/');
+    }  else {
+      res.render("list", { listTitle: day, newItems: foundItmes });
+    }  
+
+  });
 });
 
 app.get("/work", (req, res) => {
@@ -55,8 +65,7 @@ app.get("/about", (req, res) => {
 });
 
 app.post("/", (req, res) => {
-  console.log(req.body);
-  item = req.body.newItem;
+  const item = req.body.newItem;
   if (req.body.list === "Work") {
     workItems.push(item);
     res.redirect("/work");
