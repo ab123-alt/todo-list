@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -9,8 +10,34 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-var items = ["Buy food", "Cook food", "Eat food"];
-var workItems = [];
+mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
+
+// schema
+const itemSchema = new mongoose.Schema({
+  name: String
+})
+
+// model -> in the databse todolistDB, a collection with the name items will be created 
+const Item = mongoose.model('Item', itemSchema);
+
+// document1
+const item1 = new Item({name: 'Welcome to your ToDo List'});
+
+// document2
+const item2 = new Item({name: 'Welcome to your ToDo List2'});
+
+// document3
+const item3 = new Item({name: 'Welcome to your ToDo List3'});
+
+const defaultItems = [item1, item2, item3];
+
+Item.insertMany(defaultItems, (err) => {
+  if(err) {
+    console.log('Something went wrong', err);
+  } else {
+    console.log('Successfully created default items');
+  }
+})
 
 app.get("/", (req, res) => {
   const currentDay = new Date();
