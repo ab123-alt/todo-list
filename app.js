@@ -17,7 +17,7 @@ mongoose.connect("mongodb://localhost:27017/todolistDB", {
 
 // schema
 const itemSchema = new mongoose.Schema({
-  name: String,
+  name: String
 });
 
 // model -> in the databse todolistDB, a collection with the name items will be created
@@ -65,12 +65,14 @@ app.get("/about", (req, res) => {
 });
 
 app.post("/", (req, res) => {
-  const item = req.body.newItem;
+  const itemName = req.body.newItem;
+  const item = new Item({
+    name: itemName
+  })
+  item.save();
   if (req.body.list === "Work") {
-    workItems.push(item);
     res.redirect("/work");
   } else {
-    items.push(item);
     res.redirect("/");
   }
 });
