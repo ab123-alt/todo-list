@@ -62,7 +62,7 @@ app.get("/", (req, res) => {
       });
       res.redirect("/");
     } else {
-      res.render("list", { listTitle: day, newItems: foundItmes });
+      res.render("list", { listTitle: "Today", newItems: foundItmes });
     }
   });
 });
@@ -95,14 +95,21 @@ app.get("/:listname", (req, res) => {
 
 app.post("/", (req, res) => {
   const itemName = req.body.newItem;
+  const listName = req.body.list;
+  console.log('listName', listName);
+
   const item = new Item({
     name: itemName,
   });
   item.save();
-  if (req.body.list === "Work") {
-    res.redirect("/work");
-  } else {
+  if (listName === "Today") {
     res.redirect("/");
+  } else {
+    List.findOne({name: listName}, (err, foundList) => {
+      foundList.items.push(item);
+      foundList.save();
+      res.redirect("/" + listName);
+    });
   }
 });
 
