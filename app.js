@@ -10,6 +10,8 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
+// DB
+
 mongoose.connect("mongodb://localhost:27017/todolistDB", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -17,22 +19,32 @@ mongoose.connect("mongodb://localhost:27017/todolistDB", {
 
 // schema
 const itemSchema = new mongoose.Schema({
-  name: String
+  name: String,
 });
 
-// model -> in the databse todolistDB, a collection with the name items will be created
+// model -> in the databse todolistDB, a collection with the name items 
+// will be created automatically, when a new Item is created for the first time
 const Item = mongoose.model("Item", itemSchema);
 
 // document1
-const item1 = new Item({ name: "Welcome to your ToDo List: item1" });
+const item1 = new Item({ name: "Welcome to your ToDo List:" });
 
 // document2
-const item2 = new Item({ name: "Welcome to your ToDo List2: item2" });
+const item2 = new Item({ name: "Item2" });
 
 // document3
-const item3 = new Item({ name: "Welcome to your ToDo List3: item3" });
+const item3 = new Item({ name: "Item3" });
 
 const defaultItems = [item1, item2, item3];
+
+const listSchema = {
+  name: String,
+  items: [itemSchema],
+};
+
+const List = mongoose.model("List", listSchema);
+
+// http
 
 app.get("/", (req, res) => {
   const currentDay = new Date();
@@ -48,27 +60,44 @@ app.get("/", (req, res) => {
           console.log("Successfully created default items");
         }
       });
-      res.redirect('/');
-    }  else {
+      res.redirect("/");
+    } else {
       res.render("list", { listTitle: day, newItems: foundItmes });
-    }  
-
+    }
   });
-});
-
-app.get("/work", (req, res) => {
-  res.render("list", { listTitle: "Work list", newItems: workItems });
 });
 
 app.get("/about", (req, res) => {
   res.render("about");
 });
 
+app.get("/:listname", (req, res) => {
+  var customListName = req.params.listname;
+
+  var entry = List.findOne({ name: customListName }, (err, foundList) => {
+    if (!err) {
+      if (!foundList) {
+        const newList = new List({
+          name: customListName,
+          items: defaultItems,
+        });
+        newList.save();
+        res.redirect('/' + customListName);
+      } else {
+        res.render("list", {
+          listTitle: foundList.name,
+          newItems: foundList.items,
+        });
+      }
+    }
+  });
+});
+
 app.post("/", (req, res) => {
   const itemName = req.body.newItem;
   const item = new Item({
-    name: itemName
-  })
+    name: itemName,
+  });
   item.save();
   if (req.body.list === "Work") {
     res.redirect("/work");
@@ -77,17 +106,17 @@ app.post("/", (req, res) => {
   }
 });
 
-app.post('/delete', (req, res) => {
+app.post("/delete", (req, res) => {
   console.log(req.body.checkbox);
   const checkedItemId = req.body.checkbox;
   Item.findByIdAndRemove(checkedItemId, (err) => {
-    if(!err) {
-      console.log("Successfully deleted checked item.")
-      res.redirect('/');
+    if (!err) {
+      console.log("Successfully deleted checked item.");
+      res.redirect("/");
     } else {
       console.log("Something went wrong");
     }
-  })
+  });
 });
 
 app.listen(3000, () => {
